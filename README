@@ -1,4 +1,4 @@
-1. Python2, dnsmasq required.
+1. Python2, 7z, dnsmasq required.
 
     [pybootd, pypxe] no longer needed
 
