@@ -1,0 +1,2 @@
+AA:BB:CC:DD:EE:FF,192.168.0.123,node1.example.com
+AA:BB:CC:DD:EE:EF,192.168.0.124,node2.example.com
