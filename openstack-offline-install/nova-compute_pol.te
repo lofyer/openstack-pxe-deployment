@@ -1,0 +1,15 @@
+# create new
+module nova-compute_pol 1.0;
+
+require {
+        type nova_var_lib_t;
+        type virtlogd_t;
+        class capability dac_override;
+        class file { append getattr open };
+        class dir search;
+}
+
+#============= virtlogd_t ==============
+allow virtlogd_t nova_var_lib_t:dir search;
+allow virtlogd_t nova_var_lib_t:file { append getattr open };
+allow virtlogd_t self:capability dac_override;

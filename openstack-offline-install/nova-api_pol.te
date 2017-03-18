@@ -1,0 +1,24 @@
+module nova-api_pol 1.0;
+require {
+type nova_t;
+type httpd_config_t;
+type httpd_t;
+type nova_log_t;
+type sysctl_net_t;
+type netutils_exec_t;
+class file { read getattr create open execute };
+class dir { write search add_name };
+class capability { kill sys_ptrace };
+class capability2 block_suspend;
+}
+#============= httpd_t ==============
+allow httpd_t nova_log_t:dir { write add_name };
+allow httpd_t nova_log_t:file { create open };
+#============= nova_t ==============
+allow nova_t httpd_config_t:dir search;
+allow nova_t netutils_exec_t:file execute;
+allow nova_t self:capability kill;
+allow nova_t sysctl_net_t:dir search;
+allow nova_t sysctl_net_t:file { read getattr open };
+allow nova_t self:capability sys_ptrace;
+allow nova_t self:capability2 block_suspend;

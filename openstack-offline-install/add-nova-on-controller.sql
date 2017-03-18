@@ -1,0 +1,13 @@
+create database nova; 
+grant all privileges on nova.* to nova@'localhost' identified by 'password'; 
+grant all privileges on nova.* to nova@'%' identified by 'password'; 
+create database nova_api; 
+grant all privileges on nova_api.* to nova@'localhost' identified by 'password'; 
+grant all privileges on nova_api.* to nova@'%' identified by 'password'; 
+create database nova_placement; 
+grant all privileges on nova_placement.* to nova@'localhost' identified by 'password'; 
+grant all privileges on nova_placement.* to nova@'%' identified by 'password'; 
+create database nova_cell0; 
+grant all privileges on nova_cell0.* to nova@'localhost' identified by 'password'; 
+grant all privileges on nova_cell0.* to nova@'%' identified by 'password'; 
+flush privileges; 
