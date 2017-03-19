@@ -1,15 +1,16 @@
 #!/bin/bash
 export controller=192.168.0.80
 export subnet=192.168.118
+export eth1=ens38
 source ~/keystone.rc
 
-ovs-vsctl add-br br-ens38
-ovs-vsctl add-port br-ens38 ens38
+ovs-vsctl add-br br-$eth1
+ovs-vsctl add-port br-$eth1 $eth1
 
-sed -i "/\[ml2_type_flat\]$/aflat_networks = physnet1" /etc/neutron/plugins/ml2/ml2_conf.in
-sed -i "/\[ovs\]$/abridge_mappings = physnet1:br-ens38" /etc/neutron/plugins/ml2/openvswitch_agent.ini
+sed -i "/\[ml2_type_flat\]$/aflat_networks = physnet1" /etc/neutron/plugins/ml2/ml2_conf.ini
+sed -i "/\[ovs\]$/abridge_mappings = physnet1:br-$eth1" /etc/neutron/plugins/ml2/openvswitch_agent.ini
 
-systemctl restart neutron-openvswitch-ageno
+systemctl restart neutron-openvswitch-agent
 
 projectID=`openstack project list | grep service | awk '{print $2}'`
 openstack network create --project $projectID \

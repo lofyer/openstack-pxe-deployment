@@ -29,7 +29,7 @@ keystone-manage bootstrap --bootstrap-password admin \
 #setsebool -P httpd_can_network_connect_db on 
 
 ln -s /usr/share/keystone/wsgi-keystone.conf /etc/httpd/conf.d/
-systemctl start httpd 
+systemctl restart httpd 
 systemctl enable httpd 
 
 # Firewalld

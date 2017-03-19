@@ -2,6 +2,18 @@
 Configure /etc/hosts FIRST
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+For independent Neutron Node:
+    https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata&f=16
+    https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata&f=17
+    https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata&f=18
+
+For VLAN,VLAN Neutron network:
+    https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata&f=19
+    https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata&f=20
+
+For Cinder, Swift, Heat, Manila:
+    https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata2&f=1
+
 ARCH
 
                     OCATA
@@ -18,6 +30,18 @@ ARCH
           |  L2,L3,Metadata Agent |
           +-----------------------+
 
+     ------------+-----------------------------+------------
+                 |                             |
+             eth0|10.0.0.30                eth0|10.0.0.51
+     +-----------+-----------+     +-----------+-----------+
+     |    [ Control Node ]   |     |    [ Compute Node ]   |
+     |                       |     |                       |
+     |  MariaDB    RabbitMQ  |     |        Libvirt        |
+     |  Memcached  httpd     |     |      Nova Compute     |
+     |  Keystone   Glance    |     |                       |
+     |  Nova API             |     |                       |
+     +-----------------------+     +-----------------------+
+
 IP LIST
     controller 192.168.0.80
 
@@ -25,5 +49,6 @@ PASSWORD LIST
 
     mysql 123456
     mysql.db password
+    rabbitmq openstack/password
     horizon admin
     serivcepassword servicepassword
