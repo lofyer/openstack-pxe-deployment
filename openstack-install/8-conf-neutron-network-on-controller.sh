@@ -6,6 +6,7 @@ source ~/keystone.rc
 
 ovs-vsctl add-br br-$eth1
 ovs-vsctl add-port br-$eth1 $eth1
+ip link set $eth1 up
 
 sed -i "/\[ml2_type_flat\]$/aflat_networks = physnet1" /etc/neutron/plugins/ml2/ml2_conf.ini
 sed -i "/\[ovs\]$/abridge_mappings = physnet1:br-$eth1" /etc/neutron/plugins/ml2/openvswitch_agent.ini

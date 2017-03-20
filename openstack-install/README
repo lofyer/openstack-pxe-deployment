@@ -14,6 +14,33 @@ For VLAN,VLAN Neutron network:
 For Cinder, Swift, Heat, Manila:
     https://www.server-world.info/en/note?os=CentOS_7&p=openstack_ocata2&f=1
 
+To add more eth, i.e. ens39:
+
+    vim /etc/sysconfig/network-scripts/ens39
+        BOOTPROTO=none
+        DEVICE=ens39
+        ONBOOT=yes
+    
+    ovs-vsctl add-br br-ens39
+    ovs-vsctl add-port br-ens39 ens39
+    ip link set ens39 up
+
+    To test:
+        ovs-vsctl add-port br-ens39 vi1 – set Interface vi1 type=internal
+        ip addr add 192.168.0.253/24 dev vi1
+        ping 192.168.0.253
+
+    vim /etc/neutron/plugins/ml2/ml2_conf.ini
+        [ml2_type_flat]
+        flat_networks = physnet1,physnet2
+    vim /etc/neutron/plugins/ml2/ml2_conf.ini
+        [ovs]
+        bridge_mappings = physnet1:br-ens38,physnet2:br-ens39
+
+    systemctl restart neutron-openvswitch-agent [neutron-l3-agent]
+
+    Then create subnet like 8.
+
 ARCH
 
                     OCATA
