@@ -1,6 +1,6 @@
 1. Python2, 7z, dnsmasq required.
 
-    [pybootd, pypxe] no longer needed
+    [pybootd, pypxe] no longer needed because of stability.
 
 2. pxe kpxe kkpxe
 
@@ -8,21 +8,7 @@
     .kpxe is a PXE image that keeps UNDI loaded and unloads PXE
     .kkpxe is a PXE image that keeps PXE+UNDI loaded and return to PXE (instead of int 18h). From here
 
-Directory tree:
-    
-    dnsmasq.conf
-    run_dnsmasq.sh
-    run_http_server.sh
+3. HA GUIDE
 
-    tftproot:
-        ipxe.efi
-        ipxe.pxe
-        undionly.kpxe
-
-    webroot:
-        THIS_IS_80
-        ubuntu
-        centos
-
-    tmp:
-        dhcp.leases
+    mysql/mariadb
+    rabbitmq
