@@ -1,5 +1,5 @@
 #!/bin/bash
 yum install -y kubernetes etcd flannel
-echo "192.168.0.30 centos-master
-192.168.0.31 centos-minion-1
-192.168.0.32 centos-minion-2" >> /etc/hosts
+echo "192.168.0.30 k1.example.com
+192.168.0.31 k2.example.com
+192.168.0.32 k3.example.com" >> /etc/hosts
