@@ -1,0 +1,3 @@
+[submodule "self-hosted-vm"]
+	path = self-hosted-vm
+	url = https://github.com/lofyer/self-hosted-vm
