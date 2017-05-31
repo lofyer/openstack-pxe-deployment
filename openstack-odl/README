@@ -1,0 +1,6 @@
+1. build ovs
+    make dist
+    rpmbuild -bb openvswitch.spec --without check
+
+2. integrate odl
+    feature:install 

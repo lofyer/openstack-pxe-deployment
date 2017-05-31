@@ -1,3 +1,9 @@
 [submodule "self-hosted-vm"]
 	path = self-hosted-vm
 	url = https://github.com/lofyer/self-hosted-vm
+[submodule "openstack-self-hosted-controller"]
+	path = openstack-self-hosted-controller
+	url = https://github.com/lofyer/openstack-self-hosted-controller
+[submodule "openstack-self-service"]
+	path = openstack-self-service
+	url = https://github.com/lofyer/openstack-self-service
