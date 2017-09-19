@@ -15,7 +15,8 @@ systemctl start mariadb rabbitmq-server memcached iptables
 echo -e "Setting MySQL and RabbitMQ...\n"
 # Set mysql root password
 mysqladmin password 123456
-# RabbitMQ ready
+
+# RabbitMQ ready, if timeout via rebooting, try this again
 rabbitmqctl add_user openstack password 
 rabbitmqctl set_permissions openstack ".*" ".*" ".*" 
 
