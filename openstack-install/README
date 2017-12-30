@@ -92,3 +92,17 @@ Or if you're still on MySQL 5.5.2 or older which didn't support 4-byte UTF-8, us
 
 ALTER DATABASE databasename CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 ALTER TABLE tablename CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+
+
+FIX:
+pike: too many connections
+
+Change /usr/lib/systemd/system/mariadb.service:
+LimitNOFILE=65535
+LimitNPROC=65535
+
+Then:
+systemctl daemon-reload
+systemctl restart  mariadb.service
+
+MariaDB [(none)]> show variables like 'max_connections';
