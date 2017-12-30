@@ -108,4 +108,4 @@ systemctl restart  mariadb.service
 MariaDB [(none)]> show variables like 'max_connections';
 
 FIX:
-pike: horizon, change OPENSTACK_KEYSTONE_DEFAULT_ROLE to 'admin' rather than 'user' to enable edit quota in dashboard
+pike: horizon, change OPENSTACK_KEYSTONE_DEFAULT_ROLE to '_member_' or 'admin' rather than 'user' to enable edit quota in dashboard
