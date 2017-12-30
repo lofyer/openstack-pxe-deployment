@@ -1,0 +1,197 @@
+Ref:
+
+    http://superuser.openstack.org/articles/ceph-as-storage-for-openstack/
+    http://docs.ceph.com/docs/master/rbd/rbd-openstack/
+
+0. Install ceph on every compute node, glance-controller, cinder-storage(python-rbd).
+
+    [root@nova-compute] yum install -y ceph
+    [root@cinder-storage] yum install -y ceph
+    [root@glance-contronller] yum install -y ceph
+
+1. Create pool for nova,glance and cinder
+
+    [root@ceph1]# ceph osd pool create glance 128
+    [root@ceph1]# ceph osd pool create cinder 128
+    [root@ceph1]# ceph osd pool create nova 128
+
+2. Create ceph auth on ceph node
+
+    [root@ceph1]# ceph auth get-or-create client.glance mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=glance' -o /etc/ceph/ceph.client.glance.keyring
+
+    [root@ceph1]# ceph auth get-or-create client.cinder mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=cinder, allow rx pool=glance, allow rwx pool=nova' -o /etc/ceph/ceph.client.cinder.keyring
+
+    [root@ceph1]# ceph auth get-or-create client.nova mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool=nova, allow rx pool=glance, allow rwx pool=cinder' -o /etc/ceph/ceph.client.nova.keyring
+
+3. Configure Glance
+
+    3.1. Install python-rbd in glance controller node or you can just install ceph(prefer)
+
+        [root@glance-controller]# yum install -y python-rbd
+        [root@glance-controller]# yum install -y ceph
+
+    3.2. Create ceph user, and add it to sudoers
+
+        [root@glance-controller]# mkdir /etc/ceph
+        [root@glance-controller]# useradd ceph
+        [root@glance-controller]# passwd ceph
+
+        [root@glance-controller]# cat << EOF >/etc/sudoers.d/ceph
+        ceph ALL = (root) NOPASSWD:ALL
+        Defaults:ceph !requiretty
+        EOF
+
+    3.3. Copy ceph.conf and glance keyring to glance controller node
+
+        [root@ceph1]# scp /etc/ceph/ceph.conf root@glance-controller:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/ceph.client.glance.keyring root@glance-controller:/etc/ceph/
+
+        [root@glance-controller]# chgrp glance /etc/ceph/ceph.client.glance.keyring
+        [root@glance-controller]# chmod 0640 /etc/ceph/ceph.client.glance.keyring
+
+    3.4. Add this ceph conf to glance-controller
+
+        [root@glance-controller]# vi /etc/ceph/ceph.conf
+        ...
+        [client.glance]
+        keyring = /etc/ceph/ceph.client.glance.keyring
+
+    3.4. Edit glance-api.conf like this
+
+        [root@glance-controller]# vi /etc/glance/glance-api.conf
+        ...
+        [glance_store]
+        stores = rbd
+        default_store = rbd
+        rbd_store_pool = glance 
+        rbd_store_user = glance
+        rbd_store_ceph_conf = /etc/ceph/ceph.conf
+        ...
+
+    3.5. Restart glance-api service
+
+        [root@glance-controller]# systemctl restart openstack-glance-api
+
+4. Configure Cinder
+
+    4.1. Install ceph like 3.1.
+
+    4.2. Generate uuid for libvirt secret, key value, cinder.xml, and copy them to cinder-storage node and nova-compute node.
+
+        [root@ceph1]# uuidgen |tee /etc/ceph/cinder.uuid.txt
+        [root@ceph1]# ceph auth get client.cinder > /etc/ceph/client.cinder.key
+        [root@ceph1]# vi /etc/ceph/cinder.xml # Use the uuid above
+        <secret ephemeral='no' private='no'>
+            <uuid>cd77d73d-dd58-4996-80a5-7bc83a0d75ff</uuid>
+            <usage type='ceph'>
+                <name>client.cinder secret</name>
+            </usage>
+        </secret>
+        
+
+        [root@ceph1]# scp /etc/ceph/client.client.cinder.keyring root@cinder-storage:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/cinder.uuid.txt root@cinder-storage:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/client.cinder.key root@cinder-storage:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/cinder.xml root@cinder-storage:/etc/ceph/
+
+        [root@cinder-storage]# chgrp cinder /etc/ceph/ceph.client.cinder.keyring
+        [root@cinder-storage]# chmod 0640 /etc/ceph/ceph.client.cinder.keyring
+
+        [root@ceph1]# scp /etc/ceph/client.client.cinder.keyring root@nova-compute:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/cinder.uuid.txt root@nova-compute:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/client.cinder.key root@nova-compute:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/cinder.xml root@nova-compute:/etc/ceph/
+
+    4.3. Add this to cinder-storage node and nova-compute node.
+
+        [root@cinder-storage]# vi /etc/ceph/ceph.conf
+        ...
+        [client.cinder]
+        keyring = /etc/ceph/ceph.client.cinder.keyring
+
+        [root@nova-compute]# vi /etc/ceph/ceph.conf
+        ...
+        [client.cinder]
+        keyring = /etc/ceph/ceph.client.cinder.keyring
+
+    4.4. Define secret on every nova-compute node.
+
+        [root@nova-compute]# virsh secret-define --file /etc/ceph/cinder.xml
+        [root@nova-compute]# virsh secret-set-value --secret cd77d73d-dd58-4996-80a5-7bc83a0d75ff --base64 $(cat /etc/ceph/client.cinder.key)
+
+    4.5. Edit cinder-storage conf like this to add backend rbd in DEFAULTand restart service.
+
+        [root@cinder-storage]#  vi /etc/cinder/cinder.conf
+        [DEFAULT]
+        ...
+        enabled_backends = rbd
+        ...
+        [rbd]
+        volume_driver = cinder.cinder.drivers.rbd.RBDDriver
+        rbd_user = cinder
+        rbd_pool = cinder
+        rbd_ceph_conf = /etc/ceph/ceph.conf
+        rbd_flatten_volume_from_snapshot = false
+        rbd_max_clone_depth = 5
+        rbd_store_chunk_size = 4
+        rados_connect_timeout = -1
+        glance_api_version = 2
+        rbd_secret_uuid = cd77d73d-dd58-4996-80a5-7bc83a0d75ff
+
+        [root@cinder-storage]# openstack-service restart cinder
+
+5. Configure nova with cinder
+
+    5.1. Generate uuid for libvirt secret, key value, cinder.xml, and copy them to nova-compute node.
+
+        [root@ceph1]# uuidgen |tee /etc/ceph/nova.uuid.txt
+        [root@ceph1]# ceph auth get client.nova > /etc/ceph/client.nova.key
+        [root@ceph1]# vi /etc/ceph/nova.xml # Use the uuid above
+        <secret ephemeral='no' private='no'>
+            <uuid>c94c16f9-20bb-43f0-a935-9a30bdc8e0f5</uuid>
+            <usage type='ceph'>
+                <name>client.nova secret</name>
+            </usage>
+        </secret>
+
+        [root@ceph1]# scp /etc/ceph/client.client.nova.keyring root@nova-compute:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/nova.uuid.txt root@nova-compute:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/client.nova.key root@nova-compute:/etc/ceph/
+        [root@ceph1]# scp /etc/ceph/nova.xml root@nova-compute:/etc/ceph/
+
+        [root@nova-compute]# chgrp nova /etc/ceph/ceph.client.nova.keyring
+        [root@nova-compute]# chmod 0640 /etc/ceph/ceph.client.nova.keyring
+
+    5.2. Add this to nova-compute node.
+
+        [root@nova-compute]# vi /etc/ceph/ceph.conf
+        ...
+        [client.nova]
+        keyring = /etc/ceph/ceph.client.nova.keyring
+
+    5.3. Define secret on every nova-compute node.
+
+        [root@nova-compute]# virsh secret-define --file /etc/ceph/nova.xml
+        [root@nova-compute]# virsh secret-set-value --secret c94c16f9-20bb-43f0-a935-9a30bdc8e0f5 --base64 $(cat /etc/ceph/client.nova.key)
+
+    5.4. Edit nova conf like this to add backend rbd in DEFAULTand restart service.
+
+        [root@nova-compute]#  vi /etc/nova/nova.conf
+        [DEFAULT]
+        ...
+        force_raw_images = True
+        disk_cachemodes = writeback
+        ...
+        [libvirt]
+        images_type = rbd
+        images_rbd_pool = nova
+        images_rbd_ceph_conf = /etc/ceph/ceph.conf
+        rbd_user = nova
+        rbd_secret_uuid = c94c16f9-20bb-43f0-a935-9a30bdc8e0f5
+
+        [root@nova-compute]# systemctl restart openstack-nova-compute
+
+6. Ref commands
+
+    ceph auth ls
+    ceph auth rm client.nova
