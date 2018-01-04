@@ -81,7 +81,7 @@ PASSWORD LIST
     serivcepassword servicepassword
 
 FIX:
-pike:neutron:mysql string error
+mysql:neutron:mysql string error
 
 SELECT neutron_ml2;
 
@@ -95,7 +95,7 @@ ALTER TABLE tablename CONVERT TO CHARACTER SET utf8 COLLATE utf8_unicode_ci;
 
 
 FIX:
-pike: too many connections
+mysql: too many connections
 
 Change /usr/lib/systemd/system/mariadb.service:
 LimitNOFILE=65535
@@ -107,15 +107,40 @@ systemctl restart  mariadb.service
 
 MariaDB [(none)]> show variables like 'max_connections';
 
-FIX:
-pike: horizon, change OPENSTACK_KEYSTONE_DEFAULT_ROLE to '_member_' or 'admin' rather than 'user' to enable edit quota in dashboard
 
 FIX:
-pike: correct sequence to restart network
+horizon: change OPENSTACK_KEYSTONE_DEFAULT_ROLE to '_member_' or 'admin' rather than 'user' to enable edit quota in dashboard
+
+
+FIX:
+correct sequence to restart network after modification
+
 controller: systemctl restart neutron-server neutron-metadata-agent 
 networking: systemctl restart neutron-dhcp-agent neutron-l3-agent neutron-metadata-agent neutron-openvswitch-agent
 compute: systemctl restart openstack-nova-compute; ifconfig eth0 up; ifconfig br-eth0 up 
 
+
 FIX:
-pike: cinder volume fix
+cinder: cinder volume delete fail
 use cinder; update volumes set attach_status='detached',status='available' where id = 'bccbc38c-cfe8-405b-8150-bfe3e5f01fd3';
+
+FIX:
+pike: change image virtio to ide
+glance image-update --property hw_disk_bus=ide --property hw_cdrom_bus=ide --property hw_vif_model=e1000 ee0804ec-54c0-4393-a2f7-c52587990317 
+
+
+FIX:
+create vm failed: cinder volume create timeout
+controller: glance-api.conf
+[DEFAULT]
+show_image_direct_url = True
+
+compute node: /etc/nova/nova.conf
+[DEFAULT]
+force_raw_images = True
+disk_cachemodes = writeback
+max_concurrent_live_migrations=3
+max_local_block_devices=10
+block_device_allocate_retries=600
+block_device_allocate_retries_interval=10
+block_device_creation_timeout=600
